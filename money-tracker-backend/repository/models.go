@@ -11,13 +11,13 @@ import (
 type Session struct {
 	UserID    int32
 	Token     string
-	CreatedAt pgtype.Timestamp
-	ExpiredAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamptz
+	ExpiredAt pgtype.Timestamptz
 }
 
 type Token struct {
 	Token     pgtype.Text
-	ExpiredAt pgtype.Timestamp
+	ExpiredAt pgtype.Timestamptz
 }
 
 type User struct {
@@ -26,6 +26,6 @@ type User struct {
 	Email     string
 	Password  string
 	IsActive  pgtype.Bool
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 }

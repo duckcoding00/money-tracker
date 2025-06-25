@@ -3,8 +3,8 @@
 create table if not exists sessions(
     user_id integer unique not null,
     token text not null,
-    created_at timestamp default current_timestamp,
-    expired_at timestamp,
+    created_at timestamptz default current_timestamp,
+    expired_at timestamptz,
     constraint fk_session_user_id foreign key (user_id) references users(id)
 );
 -- +goose StatementEnd

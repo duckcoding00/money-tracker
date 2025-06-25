@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 create table if not exists token(
     token text unique,
-    expired_at timestamp
+    expired_at timestamptz
 );
 -- +goose StatementEnd
 

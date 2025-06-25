@@ -8,3 +8,9 @@ export GOOSE_MIGRATION_DIR=./database/schema
 
 generate repository:
 sqlc generate
+
+for run:
+install air first
+windows= air in cmd/powershell
+
+linux= change .air.toml cmd from /bin/main.exe to /bin/main

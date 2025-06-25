@@ -13,6 +13,11 @@ select id, username, email, password, is_active, created_at, updated_at
 from users 
 where username = $1;
 
+-- name: GetUserByEmail :one
+select id, username, email, password, is_active, created_at, updated_at
+from users 
+where email = $1;
+
 -- name: UpdateIsActive :one
 update users 
 set is_active = $1 

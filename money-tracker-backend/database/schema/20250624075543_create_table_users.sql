@@ -6,8 +6,8 @@ create table if not exists users(
     email varchar(255) not null unique,
     password varchar(255) not null,
     is_active boolean default false,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp
+    created_at timestamptz default current_timestamp,
+    updated_at timestamptz
 );
 -- +goose StatementEnd
 

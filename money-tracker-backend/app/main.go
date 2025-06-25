@@ -1,12 +1,11 @@
 package main
 
 import (
-	"github.com/duckcoding00/money-tracker/money-tracker-backend/app"
 	"github.com/gofiber/fiber/v2/log"
 )
 
 func main() {
-	app, err := app.InitApp()
+	app, err := InitApp()
 	if err != nil {
 		log.Fatalf("failed to setup application : %v", err)
 	}
