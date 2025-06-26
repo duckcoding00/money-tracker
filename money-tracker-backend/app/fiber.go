@@ -46,6 +46,15 @@ func (app *Application) Config() *fiber.App {
 	v1.Route("/user", func(router fiber.Router) {
 		router.Post("/", app.handler.User.Register)
 		router.Post("/login", app.handler.User.Login)
+		router.Patch("/reset-password", app.handler.User.ResetPassword)
+		router.Patch("/verify", app.handler.User.VerifyUser)
+	})
+
+	// token route
+	v1.Route("/token", func(router fiber.Router) {
+		router.Get("/refresh", app.handler.Middleware.RefreshTokenMiddleware(), app.handler.Token.RefreshToken)
+		router.Post("/reset", app.handler.Token.ResetToken)
+		router.Post("/verify", app.handler.Token.VerifyToken)
 	})
 
 	return r

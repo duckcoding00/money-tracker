@@ -2,9 +2,7 @@ package handler
 
 import (
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/service"
-	"github.com/duckcoding00/money-tracker/money-tracker-backend/utils/auth"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Handler struct {
@@ -16,21 +14,32 @@ type Handler struct {
 	User interface {
 		Register(ctx *fiber.Ctx) error
 		Login(ctx *fiber.Ctx) error
+		ResetPassword(ctx *fiber.Ctx) error
+		VerifyUser(ctx *fiber.Ctx) error
 	}
 
 	Middleware interface {
 		AuthMiddleware() fiber.Handler
+		RefreshTokenMiddleware() fiber.Handler
+	}
+
+	Token interface {
+		RefreshToken(ctx *fiber.Ctx) error
+		ResetToken(ctx *fiber.Ctx) error
+		VerifyToken(ctx *fiber.Ctx) error
 	}
 }
 
-func NewHandler(db *pgxpool.Pool, auth auth.JwtMethod) *Handler {
-	service := service.NewService(db, auth)
+func NewHandler(service *service.Service) *Handler {
 	return &Handler{
 		Health: &HealthHandler{},
 		User: &UserHandler{
 			s: service,
 		},
 		Middleware: &Middleware{
+			s: service,
+		},
+		Token: &TokenHandler{
 			s: service,
 		},
 	}

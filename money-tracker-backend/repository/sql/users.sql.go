@@ -3,7 +3,7 @@
 //   sqlc v1.29.0
 // source: users.sql
 
-package repository
+package sql
 
 import (
 	"context"
@@ -124,18 +124,13 @@ func (q *Queries) UpdateEmail(ctx context.Context, arg UpdateEmailParams) (strin
 
 const updateIsActive = `-- name: UpdateIsActive :one
 update users 
-set is_active = $1 
-where id = $2
+set is_active = true 
+where username = $1
 returning is_active
 `
 
-type UpdateIsActiveParams struct {
-	IsActive pgtype.Bool
-	ID       int32
-}
-
-func (q *Queries) UpdateIsActive(ctx context.Context, arg UpdateIsActiveParams) (pgtype.Bool, error) {
-	row := q.db.QueryRow(ctx, updateIsActive, arg.IsActive, arg.ID)
+func (q *Queries) UpdateIsActive(ctx context.Context, username string) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, updateIsActive, username)
 	var is_active pgtype.Bool
 	err := row.Scan(&is_active)
 	return is_active, err

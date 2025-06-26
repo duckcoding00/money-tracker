@@ -20,8 +20,8 @@ where email = $1;
 
 -- name: UpdateIsActive :one
 update users 
-set is_active = $1 
-where id = $2
+set is_active = true 
+where username = $1
 returning is_active;
 
 -- name: DeleteUserByID :exec
@@ -45,3 +45,4 @@ update users
 set email = $1
 where id = $2
 returning email;
+

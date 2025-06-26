@@ -54,3 +54,44 @@ func (h *Middleware) AuthMiddleware() fiber.Handler {
 		return ctx.Next()
 	}
 }
+
+func (h *Middleware) RefreshTokenMiddleware() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		token := ctx.Get("Authorization")
+		if token == "" {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(utils.ApiResponse{
+				Success:   false,
+				Message:   "UNAUTHORIZED",
+				ErrorCode: fmt.Sprintf("UNAUTHORIZED | %d", fiber.StatusUnauthorized),
+				Details:   "Missing Token",
+			})
+		}
+
+		parts := strings.Split(token, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(utils.ApiResponse{
+				Success:   false,
+				Message:   "UNAUTHORIZED",
+				ErrorCode: fmt.Sprintf("UNAUTHORIZED | %d", fiber.StatusUnauthorized),
+				Details:   "Malformed Token",
+			})
+		}
+
+		claims, err := h.s.Token.RefreshToken(parts[1])
+		if err != nil {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(utils.ApiResponse{
+				Success:   false,
+				Message:   "UNAUTHORIZED",
+				ErrorCode: fmt.Sprintf("UNAUTHORIZED | %d", fiber.StatusUnauthorized),
+				Details:   err.Error(),
+			})
+		}
+
+		c := context.WithValue(ctx.Context(), "id", claims.Id)
+		c = context.WithValue(c, "username", claims.Username)
+
+		ctx.SetUserContext(c)
+
+		return ctx.Next()
+	}
+}

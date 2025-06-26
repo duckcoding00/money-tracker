@@ -8,6 +8,7 @@ import (
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/model/request"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/model/response"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/repository"
+	"github.com/duckcoding00/money-tracker/money-tracker-backend/repository/sql"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/utils/auth"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/utils/errorhandler"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -17,7 +18,7 @@ import (
 )
 
 type UserService struct {
-	q    *repository.Queries
+	repo *repository.Repository
 	db   *pgxpool.Pool
 	auth auth.JwtMethod
 }
@@ -38,12 +39,14 @@ var (
 )
 
 func (s *UserService) Create(ctx context.Context, req *request.UserRequest) (int, error) {
+	db := s.repo.Sql
+	// redis := s.repo.Redis
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return 0, err
 	}
 
-	id, err := s.q.InsertUser(ctx, repository.InsertUserParams{
+	id, err := db.InsertUser(ctx, sql.InsertUserParams{
 		Username: req.Username,
 		Email:    req.Email,
 		Password: string(hashPassword),
@@ -61,13 +64,15 @@ func (s *UserService) Create(ctx context.Context, req *request.UserRequest) (int
 }
 
 func (s *UserService) Login(ctx context.Context, req *request.LoginRequest) (*response.LoginResponse, error) {
+	db := s.repo.Sql
+
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return nil, ErrTx
 	}
 	defer tx.Rollback(ctx)
 
-	qtx := s.q.WithTx(tx)
+	qtx := db.WithTx(tx)
 
 	result, err := qtx.GetUserByEmail(ctx, req.Email)
 	if err != nil {
@@ -88,7 +93,7 @@ func (s *UserService) Login(ctx context.Context, req *request.LoginRequest) (*re
 		return nil, ErrRefreshToken
 	}
 
-	if err := qtx.InsertSession(ctx, repository.InsertSessionParams{
+	if err := qtx.InsertSession(ctx, sql.InsertSessionParams{
 		UserID:    result.ID,
 		Token:     refreshToken,
 		CreatedAt: timeNow,
@@ -109,4 +114,77 @@ func (s *UserService) Login(ctx context.Context, req *request.LoginRequest) (*re
 		Username:    result.Username,
 		AccessToken: accessToken,
 	}, nil
+}
+
+func (s *UserService) VerifyUser(ctx context.Context) error {
+	token := ctx.Value("token").(string)
+
+	value, err := s.repo.Redis.GetValue(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	ttl, err := s.repo.Redis.CheckTTL(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	if ttl <= 0 {
+		return ExpiredToken
+	}
+
+	_, err = s.repo.Sql.UpdateIsActive(ctx, value)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.Redis.DelValue(ctx, token); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserService) NewPassword(ctx context.Context, password string) error {
+	username := ctx.Value("username").(string)
+	token := ctx.Value("token").(string)
+
+	_, err := s.repo.Redis.GetValue(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	ttl, err := s.repo.Redis.CheckTTL(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	if ttl <= 0 {
+		return ExpiredToken
+	}
+
+	user, err := s.repo.Sql.GetUserByUsername(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.repo.Sql.UpdatePassword(ctx, sql.UpdatePasswordParams{
+		Password: string(hashPassword),
+		ID:       user.ID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.Redis.DelValue(ctx, token); err != nil {
+		return err
+	}
+
+	return nil
 }

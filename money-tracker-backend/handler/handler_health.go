@@ -17,7 +17,7 @@ func (h *HealthHandler) Check(ctx *fiber.Ctx) error {
 func (h *HealthHandler) CheckUser(ctx *fiber.Ctx) error {
 	c := ctx.UserContext()
 
-	id := c.Value("id").(int32)
+	id := c.Value("id").(int)
 	username := c.Value("username").(string)
 	return ctx.Status(fiber.StatusOK).JSON(utils.ApiResponse{
 		Success: true,

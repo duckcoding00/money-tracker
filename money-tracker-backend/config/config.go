@@ -1,9 +1,10 @@
 package config
 
 type Config struct {
-	PortAddress string
-	DbConfig    DBConfig
-	JwtConfig   JwtConfig
+	PortAddress  string
+	RedisAddress string
+	DbConfig     DBConfig
+	JwtConfig    JwtConfig
 }
 
 type DBConfig struct {

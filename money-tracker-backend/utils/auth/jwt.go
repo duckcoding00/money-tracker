@@ -68,7 +68,7 @@ func (j *JwtStruct) ValidateAccessToken(token string) (*jwt.Token, error) {
 }
 
 func (j *JwtStruct) ValidateRefreshToken(token string) (*jwt.Token, error) {
-	return jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+	return jwt.ParseWithClaims(token, &JwtCustomPayload{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method : %v", t.Header["alg"])
 		}

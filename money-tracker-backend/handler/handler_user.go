@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -42,7 +43,7 @@ func (h *UserHandler) Register(ctx *fiber.Ctx) error {
 		})
 	}
 
-	result, err := h.s.User.Create(ctx.Context(), request)
+	_, err := h.s.User.Create(ctx.Context(), request)
 	if err != nil {
 		log.Errorf("failed register new user : %v", err)
 		if errorhandler.IsDuplicateError(err) {
@@ -62,14 +63,23 @@ func (h *UserHandler) Register(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// send otp for verify
+	if err := h.s.Token.ValidationToken(ctx.Context(), request.Username); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "BAD_REQUEST",
+			ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+			Details:   err.Error(),
+		})
+	}
+
 	return ctx.Status(fiber.StatusCreated).JSON(utils.ApiResponse{
 		Success: true,
 		Message: "SUCCESS_CREATED",
-		Data:    result,
+		Data:    "success created, please check email for verify user",
 	})
 }
 
-// register login
 func (h *UserHandler) Login(ctx *fiber.Ctx) error {
 	request := new(request.LoginRequest)
 
@@ -102,7 +112,7 @@ func (h *UserHandler) Login(ctx *fiber.Ctx) error {
 				Success:   false,
 				Message:   "BAD_REQUEST",
 				ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
-				Details:   err,
+				Details:   err.Error(),
 			})
 		}
 
@@ -127,5 +137,110 @@ func (h *UserHandler) Login(ctx *fiber.Ctx) error {
 		Success: true,
 		Message: "SUCCESS_CREATED",
 		Data:    result,
+	})
+}
+
+func (h *UserHandler) VerifyUser(ctx *fiber.Ctx) error {
+	token := ctx.Query("token")
+
+	if token == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "MISSING_PARAMETERS",
+			ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+			Details:   "token and username are required",
+		})
+	}
+
+	c := context.WithValue(ctx.Context(), "token", token)
+	ctx.SetUserContext(c)
+
+	if err := h.s.User.VerifyUser(c); err != nil {
+		if errors.Is(err, service.ExpiredToken) {
+			return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+				Success:   false,
+				Message:   "OTP_TOKEN_EXPIRED",
+				ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+				Details:   err.Error(),
+			})
+		}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "INTERNAL_SERVER",
+			ErrorCode: fmt.Sprintf("INTERNAL_SERVER_ERROR | %d", fiber.StatusInternalServerError),
+			Details:   err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(utils.ApiResponse{
+		Success: true,
+		Message: "SUCCESS_VERIFY_USER",
+		Data:    "please login again",
+	})
+}
+
+func (h *UserHandler) ResetPassword(ctx *fiber.Ctx) error {
+	request := new(request.NewPassword)
+
+	if err := ctx.BodyParser(request); err != nil {
+		log.Errorf("failed to parse request : %v", err)
+		return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "FAILED_PARSE_REQUES",
+			ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+			Details:   err,
+		})
+	}
+
+	if err := request.Validate(); err != nil {
+		validationErrs := errorhandler.ValidationErrors(err.(validator.ValidationErrors))
+		log.Errorf("validation errors : %v", validationErrs)
+		return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "VALIDATION_ERROR",
+			ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+			Details:   validationErrs,
+		})
+	}
+
+	token := ctx.Query("token")
+	username := ctx.Query("username")
+
+	if token == "" || username == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "MISSING_PARAMETERS",
+			ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+			Details:   "token and username are required",
+		})
+	}
+
+	log.Info(token)
+	log.Info(username)
+	c := context.WithValue(ctx.Context(), "username", username)
+	c = context.WithValue(c, "token", token)
+	ctx.SetUserContext(c)
+
+	if err := h.s.User.NewPassword(c, request.Password); err != nil {
+		if errors.Is(err, service.ExpiredToken) {
+			return ctx.Status(fiber.StatusBadRequest).JSON(utils.ApiResponse{
+				Success:   false,
+				Message:   "OTP_TOKEN_EXPIRED",
+				ErrorCode: fmt.Sprintf("BAD_REQUEST | %d", fiber.StatusBadRequest),
+				Details:   err.Error(),
+			})
+		}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "INTERNAL_SERVER",
+			ErrorCode: fmt.Sprintf("INTERNAL_SERVER_ERROR | %d", fiber.StatusInternalServerError),
+			Details:   err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(utils.ApiResponse{
+		Success: true,
+		Message: "SUCCESS_UPDATE_PASSWORD",
+		Data:    "please login again",
 	})
 }

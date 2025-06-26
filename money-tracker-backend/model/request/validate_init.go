@@ -15,3 +15,15 @@ func (u *UserRequest) Validate() error {
 func (u *LoginRequest) Validate() error {
 	return validate.Struct(u)
 }
+
+func (u *ResetUser) Validate() error {
+	return validate.Struct(u)
+}
+
+func (u *VerifyToken) Validate() error {
+	return validate.Struct(u)
+}
+
+func (u *NewPassword) Validate() error {
+	return validate.Struct(u)
+}

@@ -14,23 +14,29 @@ type Service struct {
 	User interface {
 		Create(context.Context, *request.UserRequest) (int, error)
 		Login(context.Context, *request.LoginRequest) (*response.LoginResponse, error)
+		NewPassword(ctx context.Context, password string) error
+		VerifyUser(ctx context.Context) error
 	}
 
 	Token interface {
 		Check(token string) (*auth.JwtCustomPayload, error)
+		RefreshToken(token string) (*auth.JwtCustomPayload, error)
+		GenerateAccessToken(ctx context.Context) (*response.LoginResponse, error)
+		ResetToken(ctx context.Context, username string) error
+		ValidationToken(ctx context.Context, username string) error
+		VerifyResetToken(ctx context.Context, req *request.VerifyToken) (string, error)
 	}
 }
 
-func NewService(db *pgxpool.Pool, auth auth.JwtMethod) *Service {
-	queries := repository.New(db)
-
+func NewService(db *pgxpool.Pool, repo *repository.Repository, auth auth.JwtMethod) *Service {
 	return &Service{
 		User: &UserService{
-			q:    queries,
+			repo: repo,
 			db:   db,
 			auth: auth,
 		},
 		Token: &TokenService{
+			repo: repo,
 			auth: auth,
 		},
 	}
