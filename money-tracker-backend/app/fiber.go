@@ -8,6 +8,7 @@ import (
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
@@ -32,6 +33,10 @@ func (app *Application) Config() *fiber.App {
 	// setup all middleware in here
 	//recover
 	r.Use(recover.New())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: "http://127.0.0.1:5173",
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
 
 	api := r.Group("/api")
 	v1 := api.Group("/v1")
@@ -44,6 +49,7 @@ func (app *Application) Config() *fiber.App {
 
 	// user route
 	v1.Route("/user", func(router fiber.Router) {
+		router.Get("/", app.handler.Middleware.AuthMiddleware(), app.handler.User.Profile)
 		router.Post("/", app.handler.User.Register)
 		router.Post("/login", app.handler.User.Login)
 		router.Patch("/reset-password", app.handler.User.ResetPassword)
@@ -52,7 +58,7 @@ func (app *Application) Config() *fiber.App {
 
 	// token route
 	v1.Route("/token", func(router fiber.Router) {
-		router.Get("/refresh", app.handler.Middleware.RefreshTokenMiddleware(), app.handler.Token.RefreshToken)
+		router.Post("/refresh", app.handler.Middleware.RefreshTokenMiddleware(), app.handler.Token.RefreshToken)
 		router.Post("/reset", app.handler.Token.ResetToken)
 		router.Post("/verify", app.handler.Token.VerifyToken)
 	})

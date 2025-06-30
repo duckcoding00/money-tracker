@@ -16,6 +16,7 @@ type Handler struct {
 		Login(ctx *fiber.Ctx) error
 		ResetPassword(ctx *fiber.Ctx) error
 		VerifyUser(ctx *fiber.Ctx) error
+		Profile(ctx *fiber.Ctx) error
 	}
 
 	Middleware interface {

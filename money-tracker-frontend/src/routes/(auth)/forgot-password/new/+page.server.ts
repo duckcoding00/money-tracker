@@ -1,16 +1,15 @@
-import { fail, type Actions } from '@sveltejs/kit';
-import type { PageServerLoad } from '../register/$types';
+import { fail, isRedirect, redirect, type Actions } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
 export const load = (async () => {
 	return {};
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
-	register: async ({ request, fetch }) => {
+	update: async ({ fetch, request }) => {
 		const form = await request.formData();
-
 		const username = form.get('username') as string;
-		const email = form.get('email') as string;
+		const token = form.get('token') as string;
 		const password = form.get('password') as string;
 		const confirm_password = form.get('confirm_password') as string;
 
@@ -19,34 +18,31 @@ export const actions: Actions = {
 		}
 
 		const body = JSON.stringify({
-			username,
-			email,
 			password
 		});
 
-		console.log(body);
 		try {
-			const response = await fetch('http://127.0.0.1:8080/api/v1/user', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json'
-				},
-				body: body
-			});
+			const response = await fetch(
+				`http://127.0.0.1:8080/api/v1/user/reset-password?token=${token}&username=${username}`,
+				{
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json'
+					},
+					body: body
+				}
+			);
 
 			const result = await response.json();
-
-			console.log(result);
 
 			if (!response.ok) {
 				return fail(response.status, result);
 			}
 
-			return {
-				result
-			};
+			throw redirect(303, '/login');
 		} catch (error) {
+			if (isRedirect(error)) throw error;
 			return fail(500, { message: 'Server error occurred' });
 		}
 	}

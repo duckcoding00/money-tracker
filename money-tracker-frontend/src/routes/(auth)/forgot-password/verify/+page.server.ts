@@ -1,32 +1,23 @@
-import { fail, type Actions } from '@sveltejs/kit';
-import type { PageServerLoad } from '../register/$types';
+import { fail, isRedirect, redirect, type Actions } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
 export const load = (async () => {
 	return {};
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
-	register: async ({ request, fetch }) => {
+	verify: async ({ fetch, request }) => {
 		const form = await request.formData();
-
+		const token = form.get('otp') as string;
 		const username = form.get('username') as string;
-		const email = form.get('email') as string;
-		const password = form.get('password') as string;
-		const confirm_password = form.get('confirm_password') as string;
-
-		if (confirm_password !== password) {
-			return fail(400, { message: 'Password must same with confirm password' });
-		}
 
 		const body = JSON.stringify({
-			username,
-			email,
-			password
+			token,
+			username
 		});
 
-		console.log(body);
 		try {
-			const response = await fetch('http://127.0.0.1:8080/api/v1/user', {
+			const response = await fetch('http://127.0.0.1:8080/api/v1/token/verify', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -36,17 +27,20 @@ export const actions: Actions = {
 			});
 
 			const result = await response.json();
-
 			console.log(result);
+			let otp = result.data;
 
 			if (!response.ok) {
+				if (result.details === 'redis value didnt exists') {
+					return fail(400, { message: 'Are you sure that is the correct OTP?' });
+				}
 				return fail(response.status, result);
 			}
 
-			return {
-				result
-			};
+			throw redirect(303, `/forgot-password/new?token=${otp}&username=${username}`);
 		} catch (error) {
+			if (isRedirect(error)) throw error;
+
 			return fail(500, { message: 'Server error occurred' });
 		}
 	}

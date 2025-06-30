@@ -6,6 +6,7 @@ import (
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/model/request"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/model/response"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/repository"
+	"github.com/duckcoding00/money-tracker/money-tracker-backend/repository/sql"
 	"github.com/duckcoding00/money-tracker/money-tracker-backend/utils/auth"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -16,6 +17,7 @@ type Service struct {
 		Login(context.Context, *request.LoginRequest) (*response.LoginResponse, error)
 		NewPassword(ctx context.Context, password string) error
 		VerifyUser(ctx context.Context) error
+		Profile(ctx context.Context) (*sql.User, error)
 	}
 
 	Token interface {

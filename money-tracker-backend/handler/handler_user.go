@@ -244,3 +244,23 @@ func (h *UserHandler) ResetPassword(ctx *fiber.Ctx) error {
 		Data:    "please login again",
 	})
 }
+
+func (h *UserHandler) Profile(ctx *fiber.Ctx) error {
+	c := ctx.UserContext()
+
+	result, err := h.s.User.Profile(c)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(utils.ApiResponse{
+			Success:   false,
+			Message:   "INTERNAL_SERVER",
+			ErrorCode: fmt.Sprintf("INTERNAL_SERVER_ERROR | %d", fiber.StatusInternalServerError),
+			Details:   err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(utils.ApiResponse{
+		Success: true,
+		Message: "SUCCESS_UPDATE_PASSWORD",
+		Data:    result,
+	})
+}

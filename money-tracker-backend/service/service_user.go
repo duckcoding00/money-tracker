@@ -188,3 +188,14 @@ func (s *UserService) NewPassword(ctx context.Context, password string) error {
 
 	return nil
 }
+
+func (s *UserService) Profile(ctx context.Context) (*sql.User, error) {
+	username := ctx.Value("username").(string)
+
+	user, err := s.repo.Sql.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}

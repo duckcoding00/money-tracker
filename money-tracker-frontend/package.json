@@ -39,6 +39,7 @@
 		"vite-plugin-devtools-json": "^0.2.0"
 	},
 	"dependencies": {
-		"aos": "^2.3.4"
+		"aos": "^2.3.4",
+		"jwt-decode": "^4.0.0"
 	}
 }
