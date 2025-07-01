@@ -4,7 +4,7 @@ export
 
 .PHONY: migration-create
 migration-create:
-	@goose create -s $(filter-out $@,$(MAKECMDGOALS)) sql
+	@goose create  $(filter-out $@,$(MAKECMDGOALS)) sql
 
 .PHONY: migrate-up
 migrate-up:

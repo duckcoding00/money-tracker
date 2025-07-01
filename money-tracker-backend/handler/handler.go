@@ -29,6 +29,20 @@ type Handler struct {
 		ResetToken(ctx *fiber.Ctx) error
 		VerifyToken(ctx *fiber.Ctx) error
 	}
+
+	Income interface {
+		InsertIncome(ctx *fiber.Ctx) error
+		UpdateIncome(ctx *fiber.Ctx) error
+		GetIncomes(ctx *fiber.Ctx) error
+	}
+	Expense interface {
+		InsertExpense(ctx *fiber.Ctx) error
+		UpdateExpense(ctx *fiber.Ctx) error
+		GetExpenses(ctx *fiber.Ctx) error
+	}
+	Dashboard interface {
+		GetDashboard(ctx *fiber.Ctx) error
+	}
 }
 
 func NewHandler(service *service.Service) *Handler {
@@ -41,6 +55,15 @@ func NewHandler(service *service.Service) *Handler {
 			s: service,
 		},
 		Token: &TokenHandler{
+			s: service,
+		},
+		Income: &IncomeHandler{
+			s: service,
+		},
+		Expense: &ExpenseHandler{
+			s: service,
+		},
+		Dashboard: &DashboardHandler{
 			s: service,
 		},
 	}

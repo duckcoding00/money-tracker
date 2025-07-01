@@ -63,6 +63,25 @@ func (app *Application) Config() *fiber.App {
 		router.Post("/verify", app.handler.Token.VerifyToken)
 	})
 
+	// income route
+	v1.Route("/income", func(router fiber.Router) {
+		router.Post("/", app.handler.Middleware.AuthMiddleware(), app.handler.Income.InsertIncome)
+		router.Patch("/:id", app.handler.Middleware.AuthMiddleware(), app.handler.Income.UpdateIncome)
+		router.Get("/", app.handler.Middleware.AuthMiddleware(), app.handler.Income.GetIncomes)
+	})
+
+	// expense route
+	v1.Route("/expense", func(router fiber.Router) {
+		router.Post("/", app.handler.Middleware.AuthMiddleware(), app.handler.Expense.InsertExpense)
+		router.Patch("/:id", app.handler.Middleware.AuthMiddleware(), app.handler.Expense.UpdateExpense)
+		router.Get("/", app.handler.Middleware.AuthMiddleware(), app.handler.Expense.GetExpenses)
+
+	})
+
+	v1.Route("/dashboard", func(router fiber.Router) {
+		router.Get("/", app.handler.Middleware.AuthMiddleware(), app.handler.Dashboard.GetDashboard)
+	})
+
 	return r
 }
 

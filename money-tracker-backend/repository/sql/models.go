@@ -5,8 +5,84 @@
 package sql
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type ExpenseCategory string
+
+const (
+	ExpenseCategoryFoodAndBeverage ExpenseCategory = "food_and_beverage"
+	ExpenseCategoryTransport       ExpenseCategory = "transport"
+	ExpenseCategoryBill            ExpenseCategory = "bill"
+	ExpenseCategoryEntertainment   ExpenseCategory = "entertainment"
+	ExpenseCategoryOther           ExpenseCategory = "other"
+)
+
+func (e *ExpenseCategory) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ExpenseCategory(s)
+	case string:
+		*e = ExpenseCategory(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ExpenseCategory: %T", src)
+	}
+	return nil
+}
+
+type NullExpenseCategory struct {
+	ExpenseCategory ExpenseCategory
+	Valid           bool // Valid is true if ExpenseCategory is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullExpenseCategory) Scan(value interface{}) error {
+	if value == nil {
+		ns.ExpenseCategory, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ExpenseCategory.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullExpenseCategory) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ExpenseCategory), nil
+}
+
+type Expense struct {
+	ID          string
+	UserID      int32
+	Amount      int32
+	Description pgtype.Text
+	Category    ExpenseCategory
+	CreatedAt   pgtype.Timestamptz
+}
+
+type Income struct {
+	ID        string
+	UserID    int32
+	Amount    int32
+	Source    pgtype.Text
+	CreatedAt pgtype.Timestamptz
+}
+
+type MonthlySummary struct {
+	ID           string
+	UserID       int32
+	Year         int32
+	Month        int32
+	TotalIncome  int32
+	TotalExpense int32
+	Balance      pgtype.Int4
+	CreatedAt    pgtype.Timestamptz
+}
 
 type Session struct {
 	UserID    int32

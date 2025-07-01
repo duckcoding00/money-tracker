@@ -27,3 +27,13 @@ func (u *VerifyToken) Validate() error {
 func (u *NewPassword) Validate() error {
 	return validate.Struct(u)
 }
+
+// income
+func (u *Income) Validate() error {
+	return validate.Struct(u)
+}
+
+// expense
+func (u *Expense) Validate() error {
+	return validate.Struct(u)
+}

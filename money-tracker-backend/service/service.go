@@ -28,6 +28,22 @@ type Service struct {
 		ValidationToken(ctx context.Context, username string) error
 		VerifyResetToken(ctx context.Context, req *request.VerifyToken) (string, error)
 	}
+
+	Income interface {
+		Insert(ctx context.Context, req *request.Income) (*response.IncomeInsert, error)
+		Update(ctx context.Context, id string, req *request.UpdateIncome) (*response.IncomeInsert, error)
+		GetIncomes(ctx context.Context, year, month int) ([]*response.Income, error)
+	}
+
+	Expense interface {
+		Insert(ctx context.Context, req *request.Expense) (*response.ExpenseInsert, error)
+		Update(ctx context.Context, id string, req *request.UpdateExpense) (*response.ExpenseInsert, error)
+		GetExpenses(ctx context.Context, year, month int) ([]*response.Expense, error)
+	}
+
+	Summary interface {
+		GetSummary(ctx context.Context, year, month int) (*response.Summary, error)
+	}
 }
 
 func NewService(db *pgxpool.Pool, repo *repository.Repository, auth auth.JwtMethod) *Service {
@@ -40,6 +56,17 @@ func NewService(db *pgxpool.Pool, repo *repository.Repository, auth auth.JwtMeth
 		Token: &TokenService{
 			repo: repo,
 			auth: auth,
+		},
+		Income: &IncomeService{
+			repo: repo,
+			db:   db,
+		},
+		Expense: &ExpenseService{
+			repo: repo,
+			db:   db,
+		},
+		Summary: &SummaryService{
+			repo: repo,
 		},
 	}
 }
